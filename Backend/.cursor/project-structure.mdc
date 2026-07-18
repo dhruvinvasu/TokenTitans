@@ -1,0 +1,49 @@
+---
+description: Loomky API architecture, folder structure, conventions, and AI prompt checklist
+alwaysApply: true
+---
+
+# Loomky API — Project Structure & AI Rules
+
+## Stack
+Node.js + TypeScript, Express, Inversify DI, MongoDB/Mongoose, Zod validation, JWT auth, bcrypt
+
+## demoTest Layout
+```
+src/
+├── models/base.model.ts              # BaseSchema, IBaseModel (shared)
+├── constants/database.constants.ts   # modelNames for collections
+├── modules/<feature>/
+│   ├── models/                       # Mongoose model (uses BaseSchema + modelNames)
+│   ├── validations/                  # Zod schemas (CreateXSchema, UpdateXSchema)
+│   ├── dtos/                         # z.infer types from validations only
+│   ├── repositories/
+│   ├── services/
+│   ├── controllers/
+│   └── routes/
+├── utils/validation.utils.ts         # isValidMongoId
+└── repositories/base.repository.ts
+```
+
+## Model Pattern (match loomky-api)
+- Interface extends `IBaseModel` with `_id: Types.ObjectId`
+- Schema fields + `userSchema.add(BaseSchema)`
+- Export via `model(modelNames.X.modelName, schema, modelNames.X.collectionName)`
+- Indexes with `partialFilterExpression: { deletedAt: null }`
+- Pre-save hooks with `HydratedDocument` + `MongooseError`
+
+## DTO Pattern (match loomky-api)
+- Schemas defined in `validations/*.validation.ts`
+- DTOs in `dtos/*.dto.ts` as `z.infer<typeof XSchema.body>` only
+- No manual DTO interfaces; no helpers folder in modules
+
+## Module Rules
+- No top-level controllers/ or models/ for features (shared base.model only)
+- No queues/workers/producers
+- Soft delete via `deletedAt` field
+
+## AI Checklist
+1. Validation schema first → DTO via z.infer
+2. Model uses BaseSchema + modelNames
+3. DI + routes registered
+4. Minimal diff
