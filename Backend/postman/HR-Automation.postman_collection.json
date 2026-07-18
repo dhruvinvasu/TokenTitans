@@ -1,0 +1,261 @@
+{
+  "info": {
+    "name": "HR Automation System",
+    "description": "Complete REST API for the HR Automation System (auth, jobs, candidate pipeline, resume, aptitude test + security, dashboard, AI HR assistant, notifications). Set the `HR Automation - Local` environment before running. Run Auth > Login first to populate {{token}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register HR",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Hira\",\n  \"lastName\": \"Manager\",\n  \"email\": \"{{hrEmail}}\",\n  \"password\": \"{{hrPassword}}\",\n  \"role\": \"HR\"\n}" }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) { pm.environment.set('token', res.token); }",
+                  "pm.test('token received', () => pm.expect(res.token).to.be.a('string'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{hrEmail}}\",\n  \"password\": \"{{hrPassword}}\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "item": [
+        {
+          "name": "Create Job (HR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["const res = pm.response.json();", "if (res.job && res.job._id) { pm.environment.set('jobId', res.job._id); }"], "type": "text/javascript" }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/jobs", "host": ["{{baseUrl}}"], "path": ["jobs"] },
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Frontend Developer\",\n  \"role\": \"Frontend Developer\",\n  \"description\": \"Build modern React and Next.js interfaces.\",\n  \"requiredSkills\": [\"React\", \"Next.js\", \"TypeScript\", \"CSS\"],\n  \"experienceRequired\": 2,\n  \"salaryRange\": { \"min\": 600000, \"max\": 1200000, \"currency\": \"INR\" },\n  \"location\": \"Ahmedabad\",\n  \"skillMatchThreshold\": 70,\n  \"salaryMatchThreshold\": 80\n}" }
+          }
+        },
+        {
+          "name": "List Active Jobs (Public)",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/jobs/active", "host": ["{{baseUrl}}"], "path": ["jobs", "active"] } }
+        },
+        {
+          "name": "Get Job (Public)",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/jobs/{{jobId}}", "host": ["{{baseUrl}}"], "path": ["jobs", "{{jobId}}"] } }
+        },
+        {
+          "name": "List All Jobs (HR)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/jobs", "host": ["{{baseUrl}}"], "path": ["jobs"] } }
+        },
+        {
+          "name": "Update Job (HR)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/jobs/{{jobId}}", "host": ["{{baseUrl}}"], "path": ["jobs", "{{jobId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"isActive\": true,\n  \"experienceRequired\": 3\n}" }
+          }
+        },
+        {
+          "name": "Delete Job (HR)",
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/jobs/{{jobId}}", "host": ["{{baseUrl}}"], "path": ["jobs", "{{jobId}}"] } }
+        }
+      ]
+    },
+    {
+      "name": "Candidates",
+      "item": [
+        {
+          "name": "Apply (Public, multipart)",
+          "event": [
+            { "listen": "test", "script": { "exec": ["const res = pm.response.json();", "if (res.candidateId) { pm.environment.set('candidateId', res.candidateId); }"], "type": "text/javascript" } }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/candidates/apply", "host": ["{{baseUrl}}"], "path": ["candidates", "apply"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "fullName", "value": "Alex Candidate", "type": "text" },
+                { "key": "email", "value": "alex.candidate@example.com", "type": "text" },
+                { "key": "phoneNumber", "value": "+919999999999", "type": "text" },
+                { "key": "currentCtc", "value": "800000", "type": "text" },
+                { "key": "expectedCtc", "value": "1000000", "type": "text" },
+                { "key": "location", "value": "Ahmedabad", "type": "text" },
+                { "key": "jobId", "value": "{{jobId}}", "type": "text" },
+                { "key": "resume", "type": "file", "src": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Candidates (HR)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates?status=TEST_PENDING&page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["candidates"], "query": [{ "key": "status", "value": "TEST_PENDING" }, { "key": "jobId", "value": "{{jobId}}", "disabled": true }, { "key": "search", "value": "alex", "disabled": true }, { "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] } }
+        },
+        {
+          "name": "Candidate Details (HR)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}"] } }
+        },
+        {
+          "name": "Add Note (HR)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}/notes", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}", "notes"] }, "body": { "mode": "raw", "raw": "{\n  \"text\": \"Strong React portfolio, schedule interview.\"\n}" } }
+        },
+        {
+          "name": "Assign Recruiter (HR)",
+          "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}/recruiter", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}", "recruiter"] }, "body": { "mode": "raw", "raw": "{\n  \"recruiterId\": \"{{recruiterId}}\"\n}" } }
+        },
+        {
+          "name": "Schedule Interview (HR)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}/interview", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}", "interview"] }, "body": { "mode": "raw", "raw": "{\n  \"scheduledAt\": \"2026-08-01T10:00:00.000Z\",\n  \"mode\": \"Video\",\n  \"location\": \"Google Meet\"\n}" } }
+        },
+        {
+          "name": "Interview Feedback (HR)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}/interview/feedback", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}", "interview", "feedback"] }, "body": { "mode": "raw", "raw": "{\n  \"feedback\": \"Excellent problem solving. Recommend offer.\"\n}" } }
+        },
+        {
+          "name": "Send Offer (HR)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}/offer", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}", "offer"] }, "body": { "mode": "raw", "raw": "{\n  \"ctc\": 1150000,\n  \"joiningDate\": \"2026-09-01T00:00:00.000Z\"\n}" } }
+        },
+        {
+          "name": "Mark Joined (HR)",
+          "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}/joined", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}", "joined"] } }
+        },
+        {
+          "name": "Reject (HR)",
+          "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}/reject", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}", "reject"] }, "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Position filled by another candidate.\"\n}" } }
+        },
+        {
+          "name": "Archive (HR)",
+          "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}/archive", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}", "archive"] } }
+        },
+        {
+          "name": "Export (HR)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}/export", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}", "export"] } }
+        },
+        {
+          "name": "Delete (HR)",
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/candidates/{{candidateId}}", "host": ["{{baseUrl}}"], "path": ["candidates", "{{candidateId}}"] } }
+        }
+      ]
+    },
+    {
+      "name": "Resume",
+      "item": [
+        {
+          "name": "Get Resume Analysis (HR)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/resumes/{{candidateId}}", "host": ["{{baseUrl}}"], "path": ["resumes", "{{candidateId}}"] } }
+        },
+        {
+          "name": "Download Resume (HR)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/resumes/{{candidateId}}/download", "host": ["{{baseUrl}}"], "path": ["resumes", "{{candidateId}}", "download"] } }
+        }
+      ]
+    },
+    {
+      "name": "Aptitude Test",
+      "item": [
+        {
+          "name": "Get Test (Candidate, token)",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/aptitude/{{testToken}}", "host": ["{{baseUrl}}"], "path": ["aptitude", "{{testToken}}"] } }
+        },
+        {
+          "name": "Start Test (Candidate)",
+          "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/aptitude/{{testToken}}/start", "host": ["{{baseUrl}}"], "path": ["aptitude", "{{testToken}}", "start"] } }
+        },
+        {
+          "name": "Record Security Events (Candidate)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/aptitude/{{testToken}}/events", "host": ["{{baseUrl}}"], "path": ["aptitude", "{{testToken}}", "events"] },
+            "body": { "mode": "raw", "raw": "{\n  \"events\": [\n    { \"category\": \"VIOLATION\", \"type\": \"TAB_SWITCH\", \"occurredAt\": \"2026-07-18T10:00:00.000Z\" },\n    { \"category\": \"TELEMETRY\", \"type\": \"MOUSE_CLICK\", \"meta\": { \"x\": 120, \"y\": 240 } }\n  ]\n}" }
+          }
+        },
+        {
+          "name": "Submit Test (Candidate)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/aptitude/{{testToken}}/submit", "host": ["{{baseUrl}}"], "path": ["aptitude", "{{testToken}}", "submit"] },
+            "body": { "mode": "raw", "raw": "{\n  \"answers\": [\n    { \"questionIndex\": 0, \"selectedIndex\": 1 },\n    { \"questionIndex\": 1, \"selectedIndex\": 0 }\n  ],\n  \"autoSubmitted\": false\n}" }
+          }
+        },
+        {
+          "name": "Test Report (HR)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/aptitude/hr/report/{{candidateId}}", "host": ["{{baseUrl}}"], "path": ["aptitude", "hr", "report", "{{candidateId}}"] } }
+        },
+        {
+          "name": "Reset Test (HR)",
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/aptitude/hr/reset/{{candidateId}}", "host": ["{{baseUrl}}"], "path": ["aptitude", "hr", "reset", "{{candidateId}}"] } }
+        },
+        {
+          "name": "Extend Test (HR)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/aptitude/hr/extend/{{candidateId}}", "host": ["{{baseUrl}}"], "path": ["aptitude", "hr", "extend", "{{candidateId}}"] }, "body": { "mode": "raw", "raw": "{\n  \"days\": 2\n}" } }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Overview (HR)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/dashboard/overview", "host": ["{{baseUrl}}"], "path": ["dashboard", "overview"] } }
+        }
+      ]
+    },
+    {
+      "name": "AI HR Assistant",
+      "item": [
+        {
+          "name": "Ask (HR)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/assistant/ask", "host": ["{{baseUrl}}"], "path": ["assistant", "ask"] },
+            "body": { "mode": "raw", "raw": "{\n  \"question\": \"Candidates with skill match greater than 90%\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List (HR)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/notifications", "host": ["{{baseUrl}}"], "path": ["notifications"] } }
+        },
+        {
+          "name": "Mark All Read (HR)",
+          "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/notifications/read-all", "host": ["{{baseUrl}}"], "path": ["notifications", "read-all"] } }
+        }
+      ]
+    }
+  ]
+}

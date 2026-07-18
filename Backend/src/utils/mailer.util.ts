@@ -13,9 +13,7 @@ let transporter: Transporter | null = null
 const getTransporter = (): Transporter => {
   if (!transporter) {
     transporter = nodemailer.createTransport({
-      host: Config.SMTP_HOST,
-      port: Config.SMTP_PORT,
-      secure: Config.SMTP_PORT === 465,
+      service: 'gmail',
       auth: {
         user: Config.SMTP_USER,
         pass: Config.SMTP_PASSWORD,

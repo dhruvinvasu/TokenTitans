@@ -36,7 +36,7 @@ const errorRequestHandler: ErrorRequestHandler = (
   if (statusCode >= 500) logger.error(message, infos)
   else if (statusCode >= 400) logger.warn(message, infos)
 
-  if (err instanceof BaseError && statusCode < 500) {
+  if (err instanceof BaseError) {
     res.json(err.toJson())
     return
   }

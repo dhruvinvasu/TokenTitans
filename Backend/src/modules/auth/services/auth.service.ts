@@ -5,6 +5,7 @@ import AuthenticationError from '@/errors/authentication.error'
 import ConflictError from '@/errors/conflict.error'
 import ForbiddenError from '@/errors/forbidden.error'
 import NotFoundError from '@/errors/not-found.error'
+import ServiceUnavailableError from '@/errors/service-unavailable.error'
 import ValidationError from '@/errors/validation.error'
 import {
   OTP_EXPIRY_MINUTES,
@@ -62,7 +63,16 @@ export class AuthService {
       verificationOtpExpiresAt: expiresAt,
     })
 
-    await this.emailService.sendVerificationOtp(user.email, otp)
+    try {
+      await this.emailService.sendVerificationOtp(user.email, otp)
+    } catch {
+      await this.userRepository.deleteById(user._id.toString())
+      throw new ServiceUnavailableError({
+        error: 'EMAIL_DELIVERY_FAILED',
+        message:
+          'We could not send the verification email. Please try again later.',
+      })
+    }
 
     return {
       message:
@@ -183,7 +193,12 @@ export class AuthService {
       resetPasswordOtpExpiresAt: expiresAt,
     })
 
-    await this.emailService.sendPasswordResetOtp(user.email, otp)
+    // Swallow delivery failures so the response is identical whether or not the
+    // account exists (anti-enumeration). The underlying error is logged by the
+    // mailer utility.
+    await this.emailService
+      .sendPasswordResetOtp(user.email, otp)
+      .catch(() => undefined)
 
     return genericResponse
   }
